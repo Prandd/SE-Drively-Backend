@@ -1,0 +1,1488 @@
+{
+	"info": {
+		"_postman_id": "959c2e9c-db12-437d-b6e6-bd103311cc60",
+		"name": "Coworking Space API",
+		"description": "API collection for testing the Coworking Space Reservation System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "42413740"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test successful registration",
+									"pm.test(\"Status code is 201\", function() {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Registration successful\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    ",
+									"    // Store the token for subsequent requests",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('USER_TOKEN', jsonData.token);",
+									"        // Also set as current token",
+									"        pm.environment.set('TOKEN', jsonData.token);",
+									"    }",
+									"});",
+									"",
+									"// Next register the admin user",
+									"pm.execution.setNextRequest(\"Register Admin\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate random email to avoid conflicts during repeated testing",
+									"const randomEmail = 'testuser_' + Math.floor(Math.random() * 10000) + '@example.com';",
+									"pm.environment.set('USER_EMAIL', randomEmail);",
+									"",
+									"// Set test user password",
+									"pm.environment.set('USER_PASSWORD', '123456');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"{{USER_EMAIL}}\",\n    \"password\": \"{{USER_PASSWORD}}\",\n    \"telephoneNumber\": \"1234567890\",\n    \"role\": \"user\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/auth/register",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test successful admin registration",
+									"pm.test(\"Status code is 201\", function() {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Admin registration successful\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    ",
+									"    // Store admin token for later use",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('ADMIN_TOKEN', jsonData.token);",
+									"    }",
+									"});",
+									"",
+									"// Next login as user (per requested flow)",
+									"pm.execution.setNextRequest(\"Login\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate random email to avoid conflicts during repeated testing",
+									"const randomEmail = 'admin_' + Math.floor(Math.random() * 10000) + '@example.com';",
+									"pm.environment.set('ADMIN_EMAIL', randomEmail);",
+									"",
+									"// Set admin password",
+									"pm.environment.set('ADMIN_PASSWORD', '123456');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Admin User\",\n    \"email\": \"{{ADMIN_EMAIL}}\",\n    \"password\": \"{{ADMIN_PASSWORD}}\",\n    \"telephoneNumber\": \"0987654321\",\n    \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/auth/register",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Login successful\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    ",
+									"    // Store the token for subsequent requests",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('TOKEN', jsonData.token);",
+									"    }",
+									"    // Store the user ID for subsequent requests",
+									"    if (jsonData.user && jsonData.user._id) {",
+									"        pm.environment.set('USER_ID', jsonData.user._id);",
+									"    }",
+									"});",
+									"",
+									"// Set next request to get current user details",
+									"pm.execution.setNextRequest(\"Get Current User\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Use credentials from environment variables set during registration",
+									"// By default, we'll use regular user credentials"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{USER_EMAIL}}\",\n    \"password\": \"{{USER_PASSWORD}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/auth/login",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"User profile retrieved successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('_id');",
+									"    pm.expect(jsonData.data).to.have.property('name');",
+									"    pm.expect(jsonData.data).to.have.property('email');",
+									"    pm.expect(jsonData.data).to.have.property('role');",
+									"    pm.expect(jsonData.data).to.have.property('telephoneNumber');",
+									"});",
+									"",
+									"// Next, proceed to logout as user",
+									"pm.execution.setNextRequest(\"Logout\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/auth/me",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Admin login successful\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    ",
+									"    // Store the admin token for subsequent admin operations",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('TOKEN', jsonData.token);",
+									"        pm.environment.set('ADMIN_TOKEN', jsonData.token);",
+									"    }",
+									"});",
+									"",
+									"// Next go to Get Current User to check admin details",
+									"pm.execution.setNextRequest(\"Get Admin Current User\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Use admin credentials from environment variables set during registration"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{ADMIN_EMAIL}}\",\n    \"password\": \"{{ADMIN_PASSWORD}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/auth/login",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Admin Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Admin profile retrieved successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('_id');",
+									"    pm.expect(jsonData.data).to.have.property('name');",
+									"    pm.expect(jsonData.data).to.have.property('email');",
+									"    pm.expect(jsonData.data.role).to.equal('admin');",
+									"    pm.expect(jsonData.data).to.have.property('telephoneNumber');",
+									"});",
+									"",
+									"// Now proceed to create coworking space with admin token",
+									"pm.execution.setNextRequest(\"Create Coworking Space\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/auth/me",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for success (Accept 200 or 204 as valid status codes)",
+									"pm.test(\"Successful logout response\", function() {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+									"});",
+									"",
+									"// Check for different response formats depending on the response",
+									"pm.test(\"Logout successful\", function() {",
+									"    // Check if we got JSON response",
+									"    try {",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData.success).to.be.true;",
+									"    } catch(e) {",
+									"        // If not JSON, that's ok if status code was success",
+									"        pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+									"    }",
+									"});",
+									"",
+									"// After logout, clear the token to simulate being logged out",
+									"pm.environment.set('TOKEN', '');",
+									"",
+									"// Try an unauthorized request to verify authentication is required",
+									"pm.execution.setNextRequest(\"Test Unauthorized Access\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/auth/logout",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Unauthorized Access",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Should receive 401 unauthorized when token is missing\", function() {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Unauthorized response contains error message\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"    pm.expect(jsonData.error).to.include('Not authorized');",
+									"});",
+									"",
+									"// Now proceed to login again as admin for next tests",
+									"pm.execution.setNextRequest(\"Admin Login\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Ensure token is cleared before this request",
+									"pm.environment.set('TOKEN', '');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/coworking-spaces",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"coworking-spaces"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Coworking Spaces",
+			"item": [
+				{
+					"name": "Create Coworking Space",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function() {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Coworking space created successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('_id');",
+									"    pm.expect(jsonData.data.name).to.equal(pm.environment.get('SPACE_NAME'));",
+									"    ",
+									"    // Store space ID for future tests",
+									"    if (jsonData.data._id) {",
+									"        pm.environment.set('SPACE_ID', jsonData.data._id);",
+									"    }",
+									"});",
+									"",
+									"// Set next request to create second space",
+									"pm.execution.setNextRequest(\"Create Second Coworking Space (Farther Location)\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Make sure admin token is used for space creation",
+									"pm.environment.set('TOKEN', pm.environment.get('ADMIN_TOKEN'));",
+									"",
+									"// Generate random name to avoid duplicate key errors",
+									"const randomName = 'Cool Space ' + Math.floor(Math.random() * 10000);",
+									"pm.environment.set('SPACE_NAME', randomName);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{SPACE_NAME}}\",\n    \"location\": \"123 Main St\",\n    \"availableSeats\": 50,\n    \"coordinates\": {\n        \"type\": \"Point\",\n        \"coordinates\": [-73.9857, 40.7484]\n    }\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/coworking-spaces",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"coworking-spaces"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Second Coworking Space (Farther Location)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function() {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Second coworking space created successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('_id');",
+									"    pm.expect(jsonData.data.name).to.equal(pm.environment.get('SPACE_NAME_2'));",
+									"    ",
+									"    // Store second space ID for comparison",
+									"    if (jsonData.data._id) {",
+									"        pm.environment.set('SPACE_ID_2', jsonData.data._id);",
+									"    }",
+									"});",
+									"",
+									"// Set next request to test nearest spaces",
+									"pm.execution.setNextRequest(\"Get Nearest Coworking Spaces\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Make sure admin token is used for space creation",
+									"pm.environment.set('TOKEN', pm.environment.get('ADMIN_TOKEN'));",
+									"",
+									"// Generate random name for second space",
+									"const randomName = 'Far Away Space ' + Math.floor(Math.random() * 10000);",
+									"pm.environment.set('SPACE_NAME_2', randomName);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{SPACE_NAME_2}}\",\n    \"location\": \"456 Far Away Street\",\n    \"availableSeats\": 30,\n    \"coordinates\": {\n        \"type\": \"Point\",\n        \"coordinates\": [-118.2437, 34.0522]\n    }\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/coworking-spaces",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"coworking-spaces"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Spaces",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Coworking spaces retrieved successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.count).to.be.at.least(1);",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    ",
+									"    // Verify that the space we created is in the list",
+									"    const spaceId = pm.environment.get('SPACE_ID');",
+									"    const spaceName = pm.environment.get('SPACE_NAME');",
+									"    const createdSpace = jsonData.data.find(space => space._id === spaceId);",
+									"    pm.expect(createdSpace).to.not.be.undefined;",
+									"    pm.expect(createdSpace.name).to.equal(spaceName);",
+									"});",
+									"",
+									"// Set next request to get details of single space",
+									"pm.execution.setNextRequest(\"Get Single Space\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Set user token for this request (both user and admin can view spaces)",
+									"pm.environment.set('TOKEN', pm.environment.get('USER_TOKEN'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/coworking-spaces",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"coworking-spaces"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Space",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Single coworking space retrieved successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    const spaceName = pm.environment.get('SPACE_NAME');",
+									"    ",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('_id');",
+									"    pm.expect(jsonData.data._id).to.equal(pm.environment.get('SPACE_ID'));",
+									"    pm.expect(jsonData.data.name).to.equal(spaceName);",
+									"    ",
+									"    // These fields may vary depending on your model structure",
+									"    // Only check them if they exist in your response",
+									"    if(jsonData.data.location) {",
+									"        pm.expect(jsonData.data.location).to.equal('123 Main St');",
+									"    }",
+									"    if(jsonData.data.address) {",
+									"        pm.expect(jsonData.data.address).to.equal('123 Main St');",
+									"    }",
+									"    if(jsonData.data.telephoneNumber) {",
+									"        pm.expect(jsonData.data.telephoneNumber).to.equal('1234567890');",
+									"    }",
+									"    if(jsonData.data.openTime) {",
+									"        pm.expect(jsonData.data.openTime).to.equal('09:00');",
+									"    }",
+									"    if(jsonData.data.closeTime) {",
+									"        pm.expect(jsonData.data.closeTime).to.equal('18:00');",
+									"    }",
+									"});",
+									"",
+									"// Set next request to create a reservation for this space",
+									"pm.execution.setNextRequest(\"Create Reservation\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/coworking-spaces/{{SPACE_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"coworking-spaces",
+								"{{SPACE_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Coworking Space",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Coworking space deleted successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    ",
+									"    // Different APIs might return different successful deletion formats",
+									"    if (jsonData.data === {}) {",
+									"        pm.expect(jsonData.data).to.eql({});",
+									"    } else if (jsonData.data === null) {",
+									"        pm.expect(jsonData.data).to.equal(null);",
+									"    }",
+									"});",
+									"",
+									"// Set next request to delete second space",
+									"pm.execution.setNextRequest(\"Delete Second Coworking Space\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Use admin token for deletion operations",
+									"pm.environment.set('TOKEN', pm.environment.get('ADMIN_TOKEN'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/coworking-spaces/{{SPACE_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"coworking-spaces",
+								"{{SPACE_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Nearest Coworking Spaces",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Nearest coworking spaces retrieved and properly sorted\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('count');",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    ",
+									"    // Log the entire response for debugging",
+									"    console.log('API Response:', JSON.stringify(jsonData, null, 2));",
+									"    ",
+									"    // Log the space IDs we're looking for",
+									"    const spaceId1 = pm.environment.get('SPACE_ID');",
+									"    const spaceId2 = pm.environment.get('SPACE_ID_2');",
+									"    console.log('First Space ID:', spaceId1);",
+									"    console.log('Second Space ID:', spaceId2);",
+									"    ",
+									"    // Check if spaces exist in the results and log what we found",
+									"    const allSpaceIds = jsonData.data.map(space => space._id);",
+									"    console.log('All Space IDs in response:', allSpaceIds);",
+									"    ",
+									"    // Look for our spaces",
+									"    const firstSpace = jsonData.data.find(space => space._id === spaceId1);",
+									"    console.log('First space found:', firstSpace ? 'Yes' : 'No');",
+									"    ",
+									"    // The second space (LA) might not be included if the max distance is too small",
+									"    // For testing purposes, we'll just verify the first space is closest",
+									"    // and that the results are properly sorted",
+									"    pm.expect(firstSpace, 'First space should be in results').to.not.be.undefined;",
+									"    ",
+									"    // If response includes distance, verify it's sorted correctly",
+									"    if (jsonData.data.length > 0 && jsonData.data[0].hasOwnProperty('distance')) {",
+									"        // Verify spaces are sorted in ascending order of distance",
+									"        for (let i = 1; i < jsonData.data.length; i++) {",
+									"            pm.expect(parseFloat(jsonData.data[i].distance)).to.be.at.least(",
+									"                parseFloat(jsonData.data[i-1].distance),",
+									"                'Spaces should be sorted by distance'",
+									"            );",
+									"        }",
+									"        ",
+									"        // Log the first space's distance",
+									"        if (firstSpace) {",
+									"            console.log('First space distance:', firstSpace.distance);",
+									"        }",
+									"    }",
+									"    ",
+									"    // Verify the first result (closest) is our NYC space",
+									"    if (jsonData.data.length > 0) {",
+									"        pm.expect(jsonData.data[0]._id).to.equal(spaceId1, ",
+									"            'The first space (NYC) should be the closest result');",
+									"    }",
+									"});",
+									"",
+									"// Proceed with reservation creation",
+									"pm.execution.setNextRequest(\"Create Reservation\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Set coordinates for New York City as test location",
+									"// This location is closer to our first space than our second space",
+									"pm.environment.set('TEST_LONGITUDE', '-74.0060');",
+									"pm.environment.set('TEST_LATITUDE', '40.7128');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/coworking-spaces/nearest?longitude={{TEST_LONGITUDE}}&latitude={{TEST_LATITUDE}}&maxDistance=5000000",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"coworking-spaces",
+								"nearest"
+							],
+							"query": [
+								{
+									"key": "longitude",
+									"value": "{{TEST_LONGITUDE}}"
+								},
+								{
+									"key": "latitude",
+									"value": "{{TEST_LATITUDE}}"
+								},
+								{
+									"key": "maxDistance",
+									"value": "5000000",
+									"description": "5,000 km - distance between NYC and LA is about 4,000 km"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Second Coworking Space",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Second coworking space deleted successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    ",
+									"    if (jsonData.data === {}) {",
+									"        pm.expect(jsonData.data).to.eql({});",
+									"    } else if (jsonData.data === null) {",
+									"        pm.expect(jsonData.data).to.equal(null);",
+									"    }",
+									"});",
+									"",
+									"// End of test flow",
+									"pm.execution.setNextRequest(null);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Use admin token for deletion operations",
+									"pm.environment.set('TOKEN', pm.environment.get('ADMIN_TOKEN'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+						"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/coworking-spaces/{{SPACE_ID_2}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"coworking-spaces",
+								"{{SPACE_ID_2}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reservations",
+			"item": [
+				{
+					"name": "Create Reservation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function() {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Reservation created successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('_id');",
+									"    pm.expect(jsonData.data.coworkingSpace).to.equal(pm.environment.get('SPACE_ID'));",
+									"    pm.expect(jsonData.data).to.have.property('date');",
+									"    pm.expect(jsonData.data).to.have.property('timeSlot');",
+									"    ",
+									"    // Store reservation ID for future tests",
+									"    if (jsonData.data._id) {",
+									"        pm.environment.set('RESERVATION_ID', jsonData.data._id);",
+									"    }",
+									"});",
+									"",
+									"// Set next request to view user's own reservations",
+									"pm.execution.setNextRequest(\"Get My Reservations\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Use regular user token for creating reservations",
+									"pm.environment.set('TOKEN', pm.environment.get('USER_TOKEN'));",
+									"",
+									"// Set tomorrow's date for the reservation at 10 AM",
+									"const tomorrow = new Date();",
+									"tomorrow.setDate(tomorrow.getDate() + 1);",
+									"tomorrow.setHours(10, 0, 0, 0);",
+									"pm.environment.set('RESERVATION_DATE', tomorrow.toISOString());",
+									"",
+									"// Set a time slot for the reservation",
+									"pm.environment.set('RESERVATION_TIMESLOT', '10:00 AM - 12:00 PM');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"coworkingSpace\": \"{{SPACE_ID}}\",\n    \"date\": \"{{RESERVATION_DATE}}\",\n    \"timeSlot\": \"{{RESERVATION_TIMESLOT}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/reservations",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reservations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Reservations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"User reservations retrieved successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.count).to.be.at.least(1);",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    ",
+									"    // Verify that the reservation we created is in the list",
+									"    const reservationId = pm.environment.get('RESERVATION_ID');",
+									"    const createdReservation = jsonData.data.find(rsv => rsv._id === reservationId);",
+									"    pm.expect(createdReservation).to.not.be.undefined;",
+									"    pm.expect(createdReservation.coworkingSpace._id).to.equal(pm.environment.get('SPACE_ID'));",
+									"});",
+									"",
+									"// Set next request to get all reservations as admin",
+									"pm.execution.setNextRequest(\"Get All Reservations (Admin)\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Use regular user token to see own reservations",
+									"pm.environment.set('TOKEN', pm.environment.get('USER_TOKEN'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/reservations/my",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reservations",
+								"my"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Reservations (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"All reservations retrieved successfully (admin only)\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('count');",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    ",
+									"    // Verify that the reservation we created is in the list",
+									"    const reservationId = pm.environment.get('RESERVATION_ID');",
+									"    if (reservationId) {",
+									"        const createdReservation = jsonData.data.find(rsv => rsv._id === reservationId);",
+									"        pm.expect(createdReservation).to.not.be.undefined;",
+									"        pm.expect(createdReservation.coworkingSpace._id).to.equal(pm.environment.get('SPACE_ID'));",
+									"    }",
+									"});",
+									"",
+									"// Set next request to update user's reservation",
+									"pm.execution.setNextRequest(\"Update Reservation\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Use admin token for this endpoint",
+									"// This is an admin-only operation",
+									"pm.environment.set('TOKEN', pm.environment.get('ADMIN_TOKEN'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/reservations",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reservations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Reservation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Reservation updated successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('_id');",
+									"    pm.expect(jsonData.data._id).to.equal(pm.environment.get('RESERVATION_ID'));",
+									"    ",
+									"    // Check if the date was updated correctly",
+									"    if (pm.request.body && pm.request.body.raw) {",
+									"        const requestBody = JSON.parse(pm.request.body.raw);",
+									"        if (requestBody.date) {",
+									"            // Date format might vary, so we just check if it contains the date string",
+									"            pm.expect(jsonData.data.date).to.include(requestBody.date.split('T')[0]);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"// Set next request to delete the reservation",
+									"pm.execution.setNextRequest(\"Delete Reservation\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Use user token for updating own reservation",
+									"pm.environment.set('TOKEN', pm.environment.get('USER_TOKEN'));",
+									"",
+									"// Update to a different date (2 days from now)",
+									"const futureDateUpdate = new Date();",
+									"futureDateUpdate.setDate(futureDateUpdate.getDate() + 2);",
+									"futureDateUpdate.setHours(14, 0, 0, 0);",
+									"pm.environment.set('UPDATED_DATE', futureDateUpdate.toISOString());",
+									"",
+									"// Update time slot",
+									"pm.environment.set('UPDATED_TIMESLOT', '2:00 PM - 4:00 PM');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"{{UPDATED_DATE}}\",\n    \"timeSlot\": \"{{UPDATED_TIMESLOT}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/reservations/{{RESERVATION_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reservations",
+								"{{RESERVATION_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Reservation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Reservation deleted successfully\", function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.message).to.equal(\"Reservation deleted\");",
+									"});",
+									"",
+									"// After deleting reservation, proceed to delete the coworking space",
+									"pm.execution.setNextRequest(\"Delete Coworking Space\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Use user token for deleting own reservation",
+									"pm.environment.set('TOKEN', pm.environment.get('USER_TOKEN'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/v1/reservations/{{RESERVATION_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reservations",
+								"{{RESERVATION_ID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
