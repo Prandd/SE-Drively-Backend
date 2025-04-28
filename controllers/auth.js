@@ -153,3 +153,59 @@ exports.updateProfile = async (req, res) => {
         });
     }
 };
+
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('name email role membershipTier');
+        res.status(200).json({
+            success: true,
+            data: users
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+}
+
+// @desc    Admin update user (name, membershipTier)
+// @route   PUT /api/v1/auth/user/:id
+// @access  Private/Admin
+exports.adminUpdateUser = async (req, res) => {
+    try {
+        const { name, membershipTier } = req.body;
+        const updateFields = {};
+        if (name) updateFields.name = name;
+        if (membershipTier) updateFields.membershipTier = membershipTier;
+
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // Only allow membershipTier update for car-renter
+        if (membershipTier && user.role !== 'car-renter') {
+            return res.status(400).json({ success: false, error: 'Only car-renter can have membership tier' });
+        }
+
+        // Update fields
+        if (name) user.name = name;
+        if (membershipTier) {
+            user.membershipTier = membershipTier;
+            user.updateMembershipBenefits();
+        }
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            data: {
+                _id: user._id,
+                name: user.name,
+                membershipTier: user.membershipTier
+            }
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
+};

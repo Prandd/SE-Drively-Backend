@@ -59,6 +59,7 @@ app.use('/api/v1/cars', carRoutes); // This includes rating routes via nested ro
 app.use('/api/v1/reservations', reservationRoutes);
 app.use('/api/v1/membership', membershipRoutes);
 
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
