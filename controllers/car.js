@@ -23,8 +23,16 @@ exports.getCars = async (req, res) => {
             query.ratingScore = { $gte: parseFloat(req.query.minRating) };
         }
 
-        // Execute query with sorting
-        let result = Car.find(query).populate('createdBy', 'name email telephoneNumber');
+        // Execute query with sorting and populate ratings
+        let result = Car.find(query)
+            .populate('createdBy', 'name email telephoneNumber')
+            .populate({
+                path: 'ratings',
+                populate: {
+                    path: 'user',
+                    select: 'name'
+                }
+            });
 
         // Sorting
         if (req.query.sort) {
@@ -98,7 +106,15 @@ exports.getCars = async (req, res) => {
 // @access  Public
 exports.getCar = async (req, res) => {
     try {
-        const car = await Car.findById(req.params.id).populate('createdBy', 'name email telephoneNumber');
+        const car = await Car.findById(req.params.id)
+            .populate('createdBy', 'name email telephoneNumber')
+            .populate({
+                path: 'ratings',
+                populate: {
+                    path: 'user',
+                    select: 'name'
+                }
+            });
         
         if (!car) {
             return res.status(404).json({

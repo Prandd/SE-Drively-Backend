@@ -91,6 +91,10 @@ const userSchema = new mongoose.Schema({
       return this.role === 'car-renter';
     }
   },
+  ratings: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Rating'
+  }],
   createdAt: {
     type: Date,
     default: Date.now

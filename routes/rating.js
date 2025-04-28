@@ -6,18 +6,20 @@ const {
     updateRating,
     deleteRating,
     getCarRatings,
-    getMyRatings
+    getMyRatings,
+    getMyCarRatings
 } = require('../controllers/rating');
 
 router.route('/')
     .get(getCarRatings)
     .post(protect, addRating);
 
+// User specific rating routes
+router.get('/my/reviews', protect, getMyRatings);
+router.get('/my/cars', protect, getMyCarRatings);
+
 router.route('/:ratingId')
     .put(protect, updateRating)
     .delete(protect, deleteRating);
-
-// Add route for getting user's reviews
-router.get('/my/reviews', protect, getMyRatings);
 
 module.exports = router;

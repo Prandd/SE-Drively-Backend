@@ -1,28 +1,5 @@
 const mongoose = require('mongoose');
 
-const ratingSchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
-    score: {
-        type: Number,
-        required: true,
-        min: 1,
-        max: 5
-    },
-    comment: {
-        type: String,
-        required: true,
-        maxlength: 500
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
-
 const CarSchema = new mongoose.Schema({
     make: {
         type: String,
@@ -75,7 +52,10 @@ const CarSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    ratings: [ratingSchema],
+    ratings: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Rating'
+    }],
     ratingScore: {
         type: Number,
         min: 0,
@@ -92,12 +72,14 @@ const CarSchema = new mongoose.Schema({
     }
 });
 
-// Calculate average rating score when ratings are modified
-CarSchema.pre('save', function(next) {
+// Calculate average rating score when ratings are populated
+CarSchema.pre('save', async function(next) {
     if (this.ratings && this.ratings.length > 0) {
-        const totalScore = this.ratings.reduce((sum, rating) => sum + rating.score, 0);
-        this.ratingScore = totalScore / this.ratings.length;
-        this.reviewCount = this.ratings.length;
+        const Rating = mongoose.model('Rating');
+        const ratings = await Rating.find({ _id: { $in: this.ratings } });
+        const totalScore = ratings.reduce((sum, rating) => sum + rating.score, 0);
+        this.ratingScore = totalScore / ratings.length;
+        this.reviewCount = ratings.length;
     }
     next();
 });
