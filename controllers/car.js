@@ -49,10 +49,17 @@ exports.getCars = async (req, res) => {
 
         if (req.user) {
             const user = await User.findById(req.user._id);
-            if (user.membershipBenefits && user.membershipBenefits.discountRate > 0) {
+            let discountRate = 0;
+            if (user.membershipTier === 'silver') {
+                discountRate = 0.10;
+            } else if (user.membershipTier === 'gold') {
+                discountRate = 0.15;
+            }
+            if (discountRate > 0) {
                 processedCars = cars.map(car => ({
                     ...car.toObject(),
-                    discountedPrice: car.rentalPrice * (1 - user.membershipBenefits.discountRate)
+                    discountedPrice: Math.round(car.rentalPrice * (1 - discountRate) * 100) / 100,
+                    discountRate
                 }));
             }
         }

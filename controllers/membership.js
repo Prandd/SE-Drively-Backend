@@ -52,7 +52,7 @@ exports.upgradeMembership = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            error: 'Server Error'
+            error: 'Server Error ' + error.message
         });
     }
 };
@@ -101,6 +101,31 @@ exports.getMembershipTiers = async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Server Error'
+        });
+    }
+};
+
+// @desc    Cancel membership (downgrade to basic)
+exports.cancelMembership = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        user.membershipTier = 'basic';
+        user.membershipExpiryDate = Date.now(); // Set to now to satisfy required validator
+        user.updateMembershipBenefits();
+        await user.save();
+        res.status(200).json({
+            success: true,
+            data: {
+                tier: user.membershipTier,
+                benefits: user.membershipBenefits,
+                expiryDate: user.membershipExpiryDate,
+                memberSince: user.memberSince
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Server Error' + error.message
         });
     }
 };
