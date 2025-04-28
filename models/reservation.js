@@ -29,6 +29,10 @@ const ReservationSchema = new mongoose.Schema({
         enum: ['pending', 'accepted', 'completed', 'cancelled'],
         default: 'pending'
     },
+    rating: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Rating'
+    },
     createdAt: {
         type: Date,
         default: Date.now

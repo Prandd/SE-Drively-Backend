@@ -25,7 +25,15 @@ exports.getReservations = async (req, res) => {
 exports.getMyReservations = async (req, res) => {
     try {
         const reservations = await Reservation.find({ user: req.user._id })
-            .populate('car');
+            .populate({
+                path: 'car',
+                select: 'make model year numberPlates rentalPrice'
+            })
+            .populate({
+                path: 'rating',
+                select: 'score comment createdAt'
+            })
+            .sort('-createdAt');
 
         res.status(200).json({
             success: true,
@@ -51,7 +59,8 @@ exports.getReceivedReservations = async (req, res) => {
         const reservations = await Reservation.find({
             car: { $in: carIds }
         }).populate('user', 'name email telephoneNumber')
-          .populate('car');
+          .populate('car')
+          .populate('rating');
 
         res.status(200).json({
             success: true,
