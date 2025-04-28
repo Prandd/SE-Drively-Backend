@@ -131,8 +131,24 @@ exports.createReservation = async (req, res) => {
             });
         }
 
+        // --- Membership discount logic ---
+        const user = req.user; // Already authenticated, but may not have all fields
+        let membershipTier = user.membershipTier;
+        let discountRate = 0;
+        // If not present, fetch from DB
+        if (!membershipTier) {
+            const dbUser = await require('../models/user').findById(req.user._id);
+            membershipTier = dbUser?.membershipTier || 'basic';
+        }
+        if (membershipTier === 'silver') discountRate = 0.10;
+        if (membershipTier === 'gold') discountRate = 0.15;
+
         const days = Math.ceil((returnDate - pickUpDate) / (1000 * 60 * 60 * 24));
-        req.body.totalPrice = days * car.rentalPrice;
+        let pricePerDay = car.rentalPrice;
+        if (discountRate > 0) {
+            pricePerDay = Math.round(car.rentalPrice * (1 - discountRate));
+        }
+        req.body.totalPrice = days * pricePerDay;
 
         const reservation = await Reservation.create(req.body);
 
