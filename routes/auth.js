@@ -4,7 +4,8 @@ const {
     login,
     logout,
     getMe,
-    updateProfile
+    updateProfile,
+    getAllUsers
 } = require('../controllers/auth');
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.post('/login', login);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);
 router.put('/updateprofile', protect, updateProfile);
+router.get('/allusers', protect, getAllUsers); // Admin only
 
 module.exports = router;

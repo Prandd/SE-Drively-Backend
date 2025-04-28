@@ -153,3 +153,15 @@ exports.updateProfile = async (req, res) => {
         });
     }
 };
+
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('name email role membershipTier');
+        res.status(200).json({
+            success: true,
+            data: users
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+}
