@@ -5,12 +5,14 @@ const {
     getMembershipStatus,
     upgradeMembership,
     getMembershipTiers,
-    cancelMembership
+    cancelMembership,
+    renewMembership
 } = require('../controllers/membership');
 
 router.get('/status', protect, getMembershipStatus);
 router.post('/upgrade', protect, upgradeMembership);
 router.get('/tiers', getMembershipTiers);
 router.post('/cancel', protect, cancelMembership);
+router.post('/renew', protect, renewMembership);
 
 module.exports = router;
