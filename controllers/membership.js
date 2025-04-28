@@ -129,3 +129,50 @@ exports.cancelMembership = async (req, res) => {
         });
     }
 };
+
+// @desc    Renew membership (extend expiry date by 1 year)
+// @route   POST /api/v1/membership/renew
+// @access  Private
+exports.renewMembership = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        if (!user.membershipTier || user.membershipTier === 'basic') {
+            return res.status(400).json({
+                success: false,
+                error: 'Only Silver or Gold members can renew membership'
+            });
+        }
+
+        // If expired, set expiry to now + 1 year, else extend by 1 year
+        const now = new Date();
+        let currentExpiry = user.membershipExpiryDate ? new Date(user.membershipExpiryDate) : now;
+        if (currentExpiry < now) currentExpiry = now;
+        user.membershipExpiryDate = new Date(currentExpiry.getTime() + 365 * 24 * 60 * 60 * 1000);
+
+        user.updateMembershipBenefits();
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            data: {
+                tier: user.membershipTier,
+                benefits: user.membershipBenefits,
+                expiryDate: user.membershipExpiryDate,
+                memberSince: user.memberSince
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Server Error ' + error.message
+        });
+    }
+};
