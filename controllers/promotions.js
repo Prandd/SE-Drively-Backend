@@ -22,7 +22,7 @@ exports.getAllPromotions = async (req, res) => {
         const promos = await Promotion.find();
         res.json({ success: true, data: promos });
     } catch (error) {
-        res.status(500).json({ success: false, error: 'Server Error' });
+        res.status(500).json({ success: false, error: 'Server Error'+ error.message });
     }
 };
 
@@ -33,7 +33,7 @@ exports.createPromotion = async (req, res) => {
         const promo = await Promotion.create(req.body);
         res.json({ success: true, data: promo });
     } catch (error) {
-        res.status(500).json({ success: false, error: 'Server Error' });
+        res.status(500).json({ success: false, error: 'Server Error' + error.message });
     }
 };
 
@@ -44,7 +44,7 @@ exports.updatePromotion = async (req, res) => {
         const promo = await Promotion.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json({ success: true, data: promo });
     } catch (error) {
-        res.status(500).json({ success: false, error: 'Server Error' });
+        res.status(500).json({ success: false, error: 'Server Error' + error.message});
     }
 };
 
@@ -55,6 +55,6 @@ exports.deletePromotion = async (req, res) => {
         await Promotion.findByIdAndDelete(req.params.id);
         res.json({ success: true });
     } catch (error) {
-        res.status(500).json({ success: false, error: 'Server Error' });
+        res.status(500).json({ success: false, error: 'Server Error'+ error.message });
     }
 };
