@@ -1,5 +1,6 @@
 const Car = require('../models/car');
 const User = require('../models/user');
+const Promotion = require('../models/promotion'); // <-- Add this line
 
 // @desc    Get all cars with filtering, sorting, and pagination
 exports.getCars = async (req, res) => {
@@ -55,6 +56,53 @@ exports.getCars = async (req, res) => {
         const cars = await result;
         let processedCars = cars;
 
+        // --- PROMOTION LOGIC START ---
+        // Fetch active promotions
+        const now = new Date();
+        const activePromotions = await Promotion.find({
+            validFrom: { $lte: now },
+            validTo: { $gte: now }
+        });
+
+        // Helper to apply promotions to a car
+        function applyPromotions(carObj) {
+            let promoDiscount = 0;
+            let promoTitle = null;
+            let promoDescription = null;
+            let promoExtras = [];
+
+            activePromotions.forEach(promo => {
+                // Example: If promotion is for all cars, or you can add more logic to target specific cars
+                if (promo.discountPercent > 0) {
+                    if (promo.discountPercent > promoDiscount) {
+                        promoDiscount = promo.discountPercent;
+                        promoTitle = promo.title;
+                        promoDescription = promo.description;
+                    }
+                }
+                if (promo.extraBenefit) {
+                    promoExtras.push(promo.extraBenefit);
+                }
+            });
+
+            let promoPrice = carObj.rentalPrice;
+            if (promoDiscount > 0) {
+                promoPrice = Math.round(carObj.rentalPrice * (1 - promoDiscount / 100));
+            }
+
+            return {
+                ...carObj,
+                promo: promoDiscount > 0 || promoExtras.length > 0 ? {
+                    discountPercent: promoDiscount,
+                    title: promoTitle,
+                    description: promoDescription,
+                    priceAfterPromo: promoPrice,
+                    extras: promoExtras
+                } : undefined
+            };
+        }
+        // --- PROMOTION LOGIC END ---
+
         if (req.user) {
             const user = await User.findById(req.user._id);
             let discountRate = 0;
@@ -71,6 +119,9 @@ exports.getCars = async (req, res) => {
                 }));
             }
         }
+
+        // Apply promotions to all cars (after membership discount)
+        processedCars = processedCars.map(carObj => applyPromotions(carObj));
 
         // Pagination result
         const pagination = {};
