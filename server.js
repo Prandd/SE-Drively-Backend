@@ -52,12 +52,13 @@ const authRoutes = require('./routes/auth');
 const carRoutes = require('./routes/car');
 const reservationRoutes = require('./routes/reservation');
 const membershipRoutes = require('./routes/membership');
-
+const promotionRoutes = require('./routes/promotion');
 // Mount Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/cars', carRoutes); // This includes rating routes via nested routing
 app.use('/api/v1/reservations', reservationRoutes);
 app.use('/api/v1/membership', membershipRoutes);
+app.use('/api/v1/promotions', promotionRoutes);
 
 
 // Error handling middleware
