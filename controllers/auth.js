@@ -104,17 +104,19 @@ exports.getMe = async (req, res) => {
     }
 };
 
-// ✅ Logout User & Clear Cookie
-// @route  POST /api/v1/auth/logout  (Changed from GET to POST)
-// @access Private
-exports.logout = (req, res) => {
-    try {
-        res.clearCookie('token');  // Clear the token from cookies
-        res.status(200).json({ success: true, data: null, message: 'User logged out successfully' });
-    } catch (error) {
-        console.error('Logout Error:', error);
-        res.status(500).json({ success: false, data: null, error: 'Server Error' });
-    }
+// @desc    Logout user
+// @route   POST /api/v1/auth/logout
+// @access  Private
+exports.logout = (req, res, next) => {
+    res.cookie('token', 'none', {
+        expires: new Date(Date.now() + 10 * 1000), // 10 seconds
+        httpOnly: true
+    });
+
+    res.status(200).json({
+        success: true,
+        message: 'User logged out successfully'
+    });
 };
 
 // @desc    Update user profile

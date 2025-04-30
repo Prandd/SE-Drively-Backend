@@ -7,6 +7,8 @@ const helmet = require('helmet');
 const {xss} = require('express-xss-sanitizer');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUI = require('swagger-ui-express');
 
 // Load environment variables
 require('dotenv').config({ path: './config/config.env' });
@@ -24,6 +26,21 @@ const connectDB = async () => {
 connectDB();
 
 const app = express();
+
+const swaggerOptions={
+    swaggerDefinition:{
+        openapi: '3.0.0',
+        info: {
+            title: 'Library API',
+            version: '1.0.0',
+            description: 'A simple Express VacQ API'
+        }
+    },
+    apis:['./routes/*.js'],
+};
+
+const swaggerDocs=swaggerJsDoc(swaggerOptions);
+app.use('/api-docs',swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
 // Middleware
 app.use(cors({
